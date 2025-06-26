@@ -66,10 +66,7 @@ python myfile.py
 
 ### ✅ Cómo subirlo a GitHub
 
-1. Guardá ese contenido en tu archivo `README.md` local.
-2. En consola:
+Los archivos para el analisis deben tener formato .dump como el exportado por LAMMPS y deben estar ubicados en un directorio llamado  'inputs'.
 
-```bash
-git add README.md
-git commit -m "Agrego README con ejemplo de input_params.json"
-git push origin main
+
+
