@@ -7,7 +7,7 @@ setup(
     author_email='santiagobergamin@gmail.com',
     license='MIT',
     description='Defect analysis and vacancy calculation for materials science',
-    url='https://github.com/TiagoBe0/VFS-LIB',
+    url='https://github.com/TiagoBe0/VFScript-SiMaF',
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     install_requires=['scikit-learn', 'pandas', 'xgboost','ovito','numpy'],
