@@ -1,5 +1,4 @@
 # VFScript-SiMaF
-# pypipackageexample
 
 ## 📄 Ejemplo completo de `input_params.json`
 
