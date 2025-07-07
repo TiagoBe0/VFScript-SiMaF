@@ -30,7 +30,6 @@
     "PREDICTOR_COLUMNS": [
         "surface_area",
         "filled_volume",
-        "cluster_size",
-        "mean_distance"
+        "cluster_size"
     ]
 }

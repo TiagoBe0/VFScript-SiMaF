@@ -84,6 +84,15 @@ def VacancyAnalysis():
         model_path="outputs/json/xgboost_model.json",
         predictor_columns=predictor_cols
     )
+    rf_predictor_graph = VacancyPredictorRF(
+        json_path="outputs/json/training_graph.json",
+        predictor_columns=predictor_cols
+    )
+    xgb_predictor_graph = XGBoostVacancyPredictor(
+        training_data_path="outputs/json/training_graph.json",
+        model_path="outputs/json/xgboost_model.json",
+        predictor_columns=predictor_cols
+    )
 
     csv_path = os.path.join("outputs", "csv", "defect_data.csv")
     if not os.path.isfile(csv_path):
@@ -107,6 +116,15 @@ def VacancyAnalysis():
         print(f"Fila {idx} → features: {features}")
         print(f"  • Predicción RF (vacancias): {vac_pred_rf}")
         print(f"  • Predicción XGBoost (vacancias): {vac_pred_xgb}\n")
+        #AHORA PARA GRAPH TRAINING
+
+        vac_pred_rf_graph = rf_predictor_graph.predict_vacancies(**features)
+        sample_features_graph = [[features[col] for col in predictor_cols]]
+        vac_pred_xgb_graph = xgb_predictor_graph.predict(sample_features)
+
+        print(f"Fila {idx} → features: {features}")
+        print(f"  • Predicción RF GRAPH (vacancias): {vac_pred_rf_graph}")
+        print(f"  • Predicción XGBoost GRAPH (vacancias): {vac_pred_xgb_graph}\n")
 
         json_input = "outputs/json/key_archivos.json"
         output_csv_path = "outputs/csv/finger_defect_data.csv"

@@ -102,7 +102,7 @@ class AtomicGraphGenerator:
             volume = 0.0
         export_file(
             p,
-            'temp.dump',
+            f'outputs/dump/graph_{count}.dump',
             'lammps/dump',
             columns=[
                 'Particle Identifier', 'Particle Type',
