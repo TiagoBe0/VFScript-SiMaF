@@ -68,6 +68,37 @@ def VacancyAnalysis():
     surf_proc.process_all_files()
     surf_proc.export_results()
 
+
+
+    #7' metodologia HSM
+    key_file = resolve_input_params_path('outputs/json/key_archivos.json')
+    with open(key_file, 'r', encoding='utf-8') as jf:
+        config = json.load(jf)
+
+    cluster_files = config.get('clusters_final', [])
+    ref_file = 'inputs/relax_structure.dump'  # tu red de referencia
+
+    for cluster_path in cluster_files:
+        # Nombre base para salida
+        base = os.path.splitext(os.path.basename(cluster_path))[0]
+        out_dump = f'outputs/dump/{base}_inside.dump'
+
+        # Procesar cada dump
+        proc = HSM(cluster_path)
+        proc.read_and_translate()
+        expr = proc.compute_hull_expression(strict=True)
+        #print(f"Expresión para {cluster_path}:\n{expr}\n")
+        proc.apply_to_reference(ref_file, out_dump)
+        #print(f"→ Dump filtrado escrito en: {out_dump}\n")
+
+
+
+
+
+
+
+
+
     # 8. Predicción con modelos
     params = cargar_json_usuario()
 
@@ -162,3 +193,6 @@ def VacancyAnalysis():
 if __name__ == "__main__":
     VacancyAnalysis()
     print("Script ejecutado correctamente.")
+
+
+

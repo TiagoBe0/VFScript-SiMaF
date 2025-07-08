@@ -30,6 +30,7 @@ src/vfscript/training/synthetic_data.py
 src/vfscript/training/training_fingerstyle.py
 src/vfscript/training/training_graph.py
 src/vfscript/training/training_processor.py
+src/vfscript/training/training_surface.py
 src/vfscript/training/utils.py
 src/vfscript/training/vacancy_predictor_curve.py
 src/vfscript/training/vacancy_predictors.py
