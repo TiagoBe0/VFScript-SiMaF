@@ -61,11 +61,5 @@ Y ejecutás con:
 python myfile.py
 
 
----
-
-### ✅ Cómo subirlo a GitHub
-
-Los archivos para el analisis deben tener formato .dump como el exportado por LAMMPS y deben estar ubicados en un directorio llamado  'inputs'.
-
 
 
