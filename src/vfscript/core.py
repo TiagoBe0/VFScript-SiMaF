@@ -12,6 +12,7 @@ from .cluster_processing.cluster_processor import ClusterProcessor, ClusterProce
 from .cluster_processing.key_files_separator import KeyFilesSeparator
 from .cluster_processing.export_cluster_list import ExportClusterList
 from .training.cristal_structure_gen import CrystalStructureGenerator
+from .training.training_surface import HSM
 import os
 import json
 from .cluster_processing.cluster_macth import DumpProcessorFinger, StatisticsCalculatorFinger, JSONFeatureExporterFinger

@@ -15,7 +15,10 @@
             "radius": 2,
             "smoothing_level": 0,
             "smoothing_level_training": 0,
-            
+            "max_graph_size": 15,
+            "max_graph_variations": 3, 
+
+
             "cutoff": 3,
             "radius_training": 3,
             "training_file_index":50,
@@ -26,8 +29,6 @@
     ],
     "PREDICTOR_COLUMNS": [
         "surface_area",
-        "filled_volume",
-        "cluster_size",
-        "mean_distance"
+        "filled_volume"
     ]
 }

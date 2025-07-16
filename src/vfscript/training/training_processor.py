@@ -15,7 +15,7 @@ from vfscript.training.utils import resolve_input_params_path
 import math
 import pandas as pd
 from vfscript.training.training_fingerstyle import StatisticsCalculator,DumpProcessor,FeatureExporter
-
+from vfscript.training.training_graph import AtomicGraphGenerator
 
 from typing import Tuple
 
@@ -429,3 +429,6 @@ class TrainingProcessor:
 
         exporter = FeatureExporter(dump_files, output_csv_path)
         exporter.export()
+
+        generator = AtomicGraphGenerator( )
+        generator.run()

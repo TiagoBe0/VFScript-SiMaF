@@ -68,6 +68,37 @@ def VacancyAnalysis():
     surf_proc.process_all_files()
     surf_proc.export_results()
 
+
+
+    #7' metodologia HSM
+    key_file = resolve_input_params_path('outputs/json/key_archivos.json')
+    with open(key_file, 'r', encoding='utf-8') as jf:
+        config = json.load(jf)
+
+    cluster_files = config.get('clusters_final', [])
+    ref_file = 'inputs/relax_structure.dump'  # tu red de referencia
+
+    for cluster_path in cluster_files:
+        # Nombre base para salida
+        base = os.path.splitext(os.path.basename(cluster_path))[0]
+        out_dump = f'outputs/dump/{base}_inside.dump'
+
+        # Procesar cada dump
+        proc = HSM(cluster_path)
+        proc.read_and_translate()
+        expr = proc.compute_hull_expression(strict=True)
+        #print(f"Expresión para {cluster_path}:\n{expr}\n")
+        proc.apply_to_reference(ref_file, out_dump)
+        #print(f"→ Dump filtrado escrito en: {out_dump}\n")
+
+
+
+
+
+
+
+
+
     # 8. Predicción con modelos
     params = cargar_json_usuario()
 
@@ -81,6 +112,15 @@ def VacancyAnalysis():
     )
     xgb_predictor = XGBoostVacancyPredictor(
         training_data_path="outputs/json/training_data.json",
+        model_path="outputs/json/xgboost_model.json",
+        predictor_columns=predictor_cols
+    )
+    rf_predictor_graph = VacancyPredictorRF(
+        json_path="outputs/json/training_graph.json",
+        predictor_columns=predictor_cols
+    )
+    xgb_predictor_graph = XGBoostVacancyPredictor(
+        training_data_path="outputs/json/training_graph.json",
         model_path="outputs/json/xgboost_model.json",
         predictor_columns=predictor_cols
     )
@@ -107,6 +147,15 @@ def VacancyAnalysis():
         print(f"Fila {idx} → features: {features}")
         print(f"  • Predicción RF (vacancias): {vac_pred_rf}")
         print(f"  • Predicción XGBoost (vacancias): {vac_pred_xgb}\n")
+        #AHORA PARA GRAPH TRAINING
+
+        vac_pred_rf_graph = rf_predictor_graph.predict_vacancies(**features)
+        sample_features_graph = [[features[col] for col in predictor_cols]]
+        vac_pred_xgb_graph = xgb_predictor_graph.predict(sample_features)
+
+        print(f"Fila {idx} → features: {features}")
+        print(f"  • Predicción RF GRAPH (vacancias): {vac_pred_rf_graph}")
+        print(f"  • Predicción XGBoost GRAPH (vacancias): {vac_pred_xgb_graph}\n")
 
         json_input = "outputs/json/key_archivos.json"
         output_csv_path = "outputs/csv/finger_defect_data.csv"
@@ -144,3 +193,6 @@ def VacancyAnalysis():
 if __name__ == "__main__":
     VacancyAnalysis()
     print("Script ejecutado correctamente.")
+
+
+

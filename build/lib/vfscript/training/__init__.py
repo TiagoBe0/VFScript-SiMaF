@@ -5,3 +5,5 @@ from . import training_processor
 from . import utils
 from . import vacancy_predictor_curve
 from . import vacancy_predictors
+from . import training_graph
+from . import training_surface

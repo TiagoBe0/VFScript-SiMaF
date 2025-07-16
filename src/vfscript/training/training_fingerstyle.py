@@ -96,8 +96,7 @@ class StatisticsCalculator:
 
         if N == 0:
             
-            stats.update({
-                'min': np.nan, 'max': np.nan, 'mean': np.nan, 'std': np.nan,
+            stats.update({ 'mean': np.nan, 'std': np.nan,
                 'skewness': np.nan, 'kurtosis': np.nan,
                 'Q1': np.nan, 'median': np.nan, 'Q3': np.nan, 'IQR': np.nan
             })
@@ -125,8 +124,6 @@ class StatisticsCalculator:
         hist_norm = hist_counts / N 
 
         stats.update({
-            'min': min_val,
-            'max': max_val,
             'mean': mean_val,
             'std': std_val,
             'skewness': skew_val,
@@ -177,7 +174,7 @@ class FeatureExporter:
     def export(self):
         
         header = [
-            "file_name", "N", "min", "max", "mean", "std",
+            "file_name", "N",  "mean", "std",
             "skewness", "kurtosis", "Q1", "median", "Q3", "IQR"
         ] + [f"hist_bin_{i}" for i in range(1, 11)]
 
@@ -211,8 +208,6 @@ class FeatureExporter:
                 row = [
                     file_name,
                     stats['N'],
-                    stats['min'],
-                    stats['max'],
                     stats['mean'],
                     stats['std'],
                     stats['skewness'],
