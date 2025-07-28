@@ -27,6 +27,7 @@ src/vfscript/surface_processor/surface_processor.py
 src/vfscript/training/__init__.py
 src/vfscript/training/cristal_structure_gen.py
 src/vfscript/training/synthetic_data.py
+src/vfscript/training/training_btree.py
 src/vfscript/training/training_fingerstyle.py
 src/vfscript/training/training_graph.py
 src/vfscript/training/training_processor.py
@@ -34,6 +35,7 @@ src/vfscript/training/training_surface.py
 src/vfscript/training/utils.py
 src/vfscript/training/vacancy_predictor_curve.py
 src/vfscript/training/vacancy_predictors.py
+src/vfscript/training/vacancy_predictors_classified.py
 src/vfscript/utils/__init__.py
 src/vfscript/utils/io_utils.py
 src/vfscript/utils/utilidades_clustering.py

@@ -28,5 +28,6 @@ from pathlib import Path
 from .training.utils import load_json_data, resolve_input_params_path
 from .runner.finger_runner import WinnerFinger
 import json
-
+from .training.training_btree import BehaviorTreeModel
+from . training.vacancy_predictors_classified import VacancyModelTrainer
 
