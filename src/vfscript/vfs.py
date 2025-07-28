@@ -69,6 +69,11 @@ def VacancyAnalysis():
     surf_proc.export_results()
 
 
+
+    exporter = ClusterFeatureExporter("outputs/json/key_archivos.json")
+    exporter.export()
+
+
     #Calcular categoria de defect_file.csv
     model = BehaviorTreeModel(weight_cluster_size=2.0, max_depth=5)
     model.train('outputs/json/training_graph.json')
@@ -89,10 +94,15 @@ def VacancyAnalysis():
     trainer.train_all_models()
     #
     #  Predecir en lote desde archivo CSV
-        
-    # Predicción automática desde CSV según grupo_predicho
-    trainer.predict_from_csv("outputs/csv/finger_data_clasificado.csv")
-
+# Ejemplo de uso
+    assigner = FingerprintVacancyAssigner(
+        base_csv_path="outputs/csv/finger_data.csv",
+        query_csv_path="outputs/csv/finger_key_files.csv",
+        weight_N=2 # peso mayor para 'N'
+    )
+    df_result = assigner.assign()
+    df_result.to_csv("outputs/csv/finger_key_files_clasificado.csv", index=False)
+    print("✅ Resultado guardado con peso_N =", assigner.weight_N)
 
 if __name__ == "__main__":
     VacancyAnalysis()

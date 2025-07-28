@@ -1,8 +1,10 @@
 import json
 import copy
+import os
+import csv
 import numpy as np
-import networkx as nx
 from scipy.spatial import ConvexHull
+import pandas as pd
 from ovito.io import import_file, export_file
 from ovito.modifiers import (
     ExpressionSelectionModifier,
@@ -11,107 +13,152 @@ from ovito.modifiers import (
     ConstructSurfaceModifier,
     InvertSelectionModifier
 )
-
+from vfscript.training.training_fingerstyle import DumpProcessor, StatisticsCalculator
 from vfscript.training.utils import resolve_input_params_path
+
 class AtomicGraphGenerator:
-    def __init__(self,json_params_path: str = None):
-       
+    def __init__(self, json_params_path: str = None):
+        # --- Parámetros de input_params.json -------------
         if json_params_path is None:
             json_params_path = resolve_input_params_path("input_params.json")
-
-
-        
-        with open(json_params_path, "r", encoding="utf-8") as f:
-            all_params = json.load(f)
-        if "CONFIG" not in all_params or not isinstance(all_params["CONFIG"], list) or len(all_params["CONFIG"]) == 0:
-            raise KeyError("input_params.json debe contener la clave 'CONFIG' como lista no vacía.")
-        cfg = all_params["CONFIG"][0]
+        cfg = json.load(open(json_params_path))["CONFIG"][0]
         self.input_path = cfg['relax']
-        self.cutoff = cfg['cutoff']
-        self.radius = cfg['radius']
-        self.smoothing_level_training = cfg['smoothing_level_training']
-        self.num_iterations = cfg['max_graph_variations'] 
+        self.cutoff    = cfg['cutoff']
+        self.radius    = cfg['radius']
+        self.smoothing = cfg['smoothing_level_training']
+        self.iterations= cfg['max_graph_variations']
         self.max_nodes = cfg['max_graph_size']
-        self.pipeline = import_file(self.input_path, multiple_frames=True)
-        self.metrics = {
-            'surface_area': [],
-            'filled_volume': [],
-            'vacancys': [],
-            'cluster_size': []
-        }
+        # -------------------------------------------------
 
+        self.pipeline = import_file(self.input_path, multiple_frames=True)
+
+        # Prepara JSON
+        self.records = []
+
+        # Rutas y header
+        self.csv_path = "outputs/csv/finger_data.csv"
+        os.makedirs(os.path.dirname(self.csv_path), exist_ok=True)
+
+        header = [
+            "vacancys",  # tú pusiste 'length', pon aquí el nombre real
+            "N", "mean", "std",
+            "skewness", "kurtosis", "Q1", "median", "Q3", "IQR"
+        ] + [f"hist_bin_{i}" for i in range(1,11)]
+
+        # Sólo escribir header si el archivo NO existe o está vacío
+        if not os.path.exists(self.csv_path) or os.path.getsize(self.csv_path) == 0:
+            with open(self.csv_path, 'w', newline='', encoding='utf-8') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(header)
     def run(self):
-        for iteration in range(1, self.num_iterations + 1):
+        for _ in range(self.iterations):
             for length in range(2, self.max_nodes + 1):
-                ids, coords = self._generate_graph(length)
+                ids, _ = self._generate_graph(length)
                 expr = " || ".join(f"ParticleIdentifier=={pid}" for pid in ids)
-                area, volume, count = self._export_graph(expr)
-                self.metrics['surface_area'].append(area)
-                self.metrics['filled_volume'].append(volume)
-                self.metrics['vacancys'].append(len(ids))
-                self.metrics['cluster_size'].append(count)
-        with open('outputs/json/training_graph.json', 'w') as f:
-            json.dump(self.metrics, f, indent=4)
-        print('Exported metrics to results.json')
+
+                # 1) exportar dump y calcular área/volumen
+                area, volume, count, dump_path = self._export_and_dump(expr)
+
+                # 2) extraer normas y estadísticas
+                proc = DumpProcessor(dump_path)
+                proc.read_and_translate()
+                proc.compute_norms()
+                stats = StatisticsCalculator.compute_statistics(proc.norms)
+
+                # 3) agregar al JSON interno
+                rec = {
+                    "surface_area": area,
+                    "filled_volume": volume,
+                    "vacancys":     len(ids),
+                    "cluster_size": count,
+                    **stats
+                }
+                self.records.append(rec)
+
+                # 4) escribir línea en el CSV
+                row = [
+                    length,
+                    stats['N'],
+                    stats['mean'],
+                    stats['std'],
+                    stats['skewness'],
+                    stats['kurtosis'],
+                    stats['Q1'],
+                    stats['median'],
+                    stats['Q3'],
+                    stats['IQR']
+                ] + [stats[f"hist_bin_{i}"] for i in range(1,11)]
+                with open(self.csv_path, 'a', newline='', encoding='utf-8') as csvfile:
+                    writer = csv.writer(csvfile)
+                    writer.writerow(row)
+
+        # Guardar JSON completo
+        os.makedirs("outputs/json", exist_ok=True)
+        with open("outputs/json/training_graph.json", "w", encoding='utf-8') as f:
+            json.dump(self.records, f, indent=4)
+        print(f"✔️ JSON guardado en outputs/json/training_graph.json")
+        print(f"✔️ CSV guardado en       {self.csv_path}")
 
     def _generate_graph(self, length: int):
-        data = self.pipeline.compute()
-        pos = data.particles.positions.array
+        data    = self.pipeline.compute()
+        pos     = data.particles.positions.array
         ids_arr = data.particles['Particle Identifier'].array
-        N = len(pos)
-        start = np.random.choice(N)
-        coords = [pos[start]]
-        ids = [int(ids_arr[start])]
+        N       = len(pos)
+        start   = np.random.choice(N)
+        coords  = [pos[start]]
+        ids     = [int(ids_arr[start])]
         current = coords[0]
-        remaining = set(range(N))
-        remaining.remove(start)
-        while len(coords) < length and remaining:
-            rem = np.array(list(remaining))
-            dists = np.linalg.norm(pos[rem] - current, axis=1)
-            order = np.argsort(dists)
-            top2 = order[:2] if len(order) >= 2 else order
-            cands = rem[top2]
+        rem_set = set(range(N)) - {start}
+
+        while len(coords) < length and rem_set:
+            rem    = np.array(list(rem_set))
+            dists  = np.linalg.norm(pos[rem] - current, axis=1)
+            order  = np.argsort(dists)
+            cands  = rem[order[:2]] if len(order) > 1 else rem[order]
             choice = np.random.choice(cands)
             coords.append(pos[choice])
             ids.append(int(ids_arr[choice]))
             current = pos[choice]
-            remaining.remove(choice)
+            rem_set.remove(choice)
+
         return ids, coords
 
-    def _export_graph(self, expr: str):
+    def _export_and_dump(self, expr: str):
         p = copy.deepcopy(self.pipeline)
         p.modifiers.append(ExpressionSelectionModifier(expression=expr))
         p.modifiers.append(DeleteSelectedModifier())
         p.modifiers.append(ConstructSurfaceModifier(
             radius=self.radius,
-            smoothing_level=self.smoothing_level_training,
+            smoothing_level=self.smoothing,
             select_surface_particles=True
         ))
         p.modifiers.append(InvertSelectionModifier())
         p.modifiers.append(DeleteSelectedModifier())
         p.modifiers.append(ClusterAnalysisModifier(cutoff=self.cutoff, unwrap_particles=True))
+
         data = p.compute()
-        points = data.particles.positions.array
-        count = len(points)
+        pts  = data.particles.positions.array
+        count= len(pts)
         if count >= 4:
-            hull = ConvexHull(points)
-            area = hull.area
+            hull   = ConvexHull(pts)
+            area   = hull.area
             volume = hull.volume
         else:
-            area = 0.0
-            volume = 0.0
+            area, volume = 0.0, 0.0
+
+        dump_dir  = "outputs/dump"
+        os.makedirs(dump_dir, exist_ok=True)
+        dump_path = os.path.join(dump_dir, f"graph_{count}.dump")
         export_file(
-            p,
-            f'outputs/dump/graph_{count}.dump',
-            'lammps/dump',
+            p, dump_path, 'lammps/dump',
             columns=[
-                'Particle Identifier', 'Particle Type',
+                'Particle Identifier','Particle Type',
                 'Position.X','Position.Y','Position.Z'
             ]
         )
         p.modifiers.clear()
-        return area, volume, count
+        return area, volume, count, dump_path
 
-if __name__ == '__main__':
-    generator = AtomicGraphGenerator()
-    generator.run()
+if __name__ == "__main__":
+    gen = AtomicGraphGenerator()
+    gen.run()

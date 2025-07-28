@@ -10,3 +10,4 @@ from .runner import *
 from .utils import *
 from .surface_processor import *
 from .training import *
+from .predictors import *

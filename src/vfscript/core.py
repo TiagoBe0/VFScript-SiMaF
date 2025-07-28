@@ -17,7 +17,7 @@ import os
 import json
 from .cluster_processing.cluster_macth import DumpProcessorFinger, StatisticsCalculatorFinger, JSONFeatureExporterFinger
 from .training.training_processor import TrainingProcessor
-from .training.vacancy_predictors import (
+from .predictors.vacancy_predictors import (
     VacancyPredictorRF,
     XGBoostVacancyPredictor,
     VacancyPredictor,
@@ -29,5 +29,6 @@ from .training.utils import load_json_data, resolve_input_params_path
 from .runner.finger_runner import WinnerFinger
 import json
 from .training.training_btree import BehaviorTreeModel
-from . training.vacancy_predictors_classified import VacancyModelTrainer
-
+from  .predictors.vacancy_predictors_classified import VacancyModelTrainer
+from .predictors.mach_finger import FingerprintVacancyAssigner
+from .training.training_defect_fingerstyle import ClusterFeatureExporter

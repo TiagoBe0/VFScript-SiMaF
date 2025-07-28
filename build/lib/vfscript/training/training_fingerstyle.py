@@ -172,41 +172,38 @@ class FeatureExporter:
         
 
     def export(self):
-        
+        # Cabecera con primer campo renombrado a 'vacancys'
         header = [
-            "file_name", "N",  "mean", "std",
+            "vacancys", "N",  "mean", "std",
             "skewness", "kurtosis", "Q1", "median", "Q3", "IQR"
         ] + [f"hist_bin_{i}" for i in range(1, 11)]
 
-        
         os.makedirs(os.path.dirname(self.output_csv), exist_ok=True)
-
         with open(self.output_csv, 'w', newline='', encoding='utf-8') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(header)
 
+            # it arranca en 1 y cuenta hasta max_training_file_index
+            it = 1
             for dump_path in self.dump_paths:
                 if not os.path.isfile(dump_path):
-                    print(f"Advertencia: no se encontró {dump_path}, se salta este archivo.")
+                    print(f"⚠️ No se encontró {dump_path}, se salta.")
                     continue
 
-               
+                # Procesar normas y stats
                 processor = DumpProcessor(dump_path)
                 try:
                     processor.read_and_translate()
                     processor.compute_norms()
                 except Exception as e:
-                    print(f"Error procesando {dump_path}: {e}")
+                    print(f"❌ Error en {dump_path}: {e}")
                     continue
 
-                
-                norms = processor.norms
-                stats = StatisticsCalculator.compute_statistics(norms)
+                stats = StatisticsCalculator.compute_statistics(processor.norms)
 
-               
-                file_name = os.path.basename(dump_path)
+                # Preparo la fila: primer elemento = número de vacancias (it)
                 row = [
-                    file_name,
+                    it,
                     stats['N'],
                     stats['mean'],
                     stats['std'],
@@ -216,12 +213,15 @@ class FeatureExporter:
                     stats['median'],
                     stats['Q3'],
                     stats['IQR']
-                ]
-                
-                for i in range(1, 11):
-                    row.append(stats[f'hist_bin_{i}'])
+                ] + [stats[f"hist_bin_{i}"] for i in range(1, 11)]
 
                 writer.writerow(row)
+
+                # Incremento y reseteo si supero el máximo
+                it += 1
+                if it > self.max_training_file_index:
+                    it = 1
+
 
         print(f"Se generó el CSV con características en: {self.output_csv}")
 

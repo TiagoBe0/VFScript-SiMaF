@@ -68,6 +68,8 @@ class VacancyModelTrainer:
         print(f"🔮 Predicción para grupo {grupo}: {prediction[0]}")
         return prediction[0]
 
+
+#ESTE METODO ES EL QUE APLICA LAS DISTINTAS ESTRATEGIAS
     def predict_from_csv(self, csv_path):
         df = pd.read_csv(csv_path)
 
@@ -78,16 +80,25 @@ class VacancyModelTrainer:
             raise ValueError(f"❌ El CSV debe contener las columnas: {self.features}")
 
         predictions = []
+
         for idx, row in df.iterrows():
             grupo = row['grupo_predicho']
-            model_path = f"xgb_model_{grupo}.pkl"
 
-            if not os.path.exists(model_path):
-                raise FileNotFoundError(f"❌ Modelo para el grupo '{grupo}' no encontrado en: {model_path}")
+            if grupo == '1-3':
+                # Lógica alternativa para 1-3
+                print(f"🔧 Predicción especial para fila {idx} con grupo '1-3'")
+                # Aquí ponés tu forma distinta de predecir:
+                # Por ejemplo: usar una constante, media, otro modelo, etc.
+                pred = 3.0  # ← ejemplo: predicción fija
+            else:
+                model_path = f"xgb_model_{grupo}.pkl"
+                if not os.path.exists(model_path):
+                    raise FileNotFoundError(f"❌ Modelo para el grupo '{grupo}' no encontrado en: {model_path}")
+                
+                model = joblib.load(model_path)
+                X_row = row[self.features].values.reshape(1, -1)
+                pred = model.predict(X_row)[0]
             
-            model = joblib.load(model_path)
-            X_row = row[self.features].values.reshape(1, -1)
-            pred = model.predict(X_row)[0]
             predictions.append(pred)
 
         df['predicted_vacancy'] = predictions
