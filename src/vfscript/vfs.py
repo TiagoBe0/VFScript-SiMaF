@@ -15,8 +15,7 @@ def VacancyAnalysis():
         os.makedirs(os.path.join(base, sub), exist_ok=True)
 
     
-    processor = TrainingProcessor()
-    processor.run()
+
 
     
     CONFIG = cargar_json_usuario()
@@ -31,7 +30,9 @@ def VacancyAnalysis():
     cs_generator = CrystalStructureGenerator(configuracion, cs_out_dir)
     dump_path = cs_generator.generate()
     print(f"Estructura relajada generada en: {dump_path}")
-
+    if configuracion['training']:
+        processor = TrainingProcessor()
+        processor.run()
     processor = ClusterProcessor(defect_file)
     processor.run()
     separator = KeyFilesSeparator(configuracion, os.path.join("outputs/json", "clusters.json"))
@@ -94,6 +95,12 @@ def VacancyAnalysis():
     trainer.train_all_models()
     #
     #  Predecir en lote desde archivo CSV
+    # Supongamos que en la etapa anterior guardaste:
+    # outputs/csv/finger_data_clasificado.csv
+    df_pred = trainer.predict_from_csv('outputs/csv/finger_data_clasificado.csv')
+    df_pred.to_csv('outputs/csv/finger_data_predicha.csv', index=False)
+    print("✅ Vacancias predichas guardadas en outputs/csv/finger_data_predicha.csv")
+
 # Ejemplo de uso
     assigner = FingerprintVacancyAssigner(
         base_csv_path="outputs/csv/finger_data.csv",
