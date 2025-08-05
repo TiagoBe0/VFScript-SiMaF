@@ -304,8 +304,7 @@ class ClusterProcessorMachine:
         self.max_iterations = config.get("iteraciones_clusterig", config['max_iterations'])
 
         
-        self.min_atoms = UtilidadesClustering.cargar_min_atoms("outputs/json/key_single_vacancy.json")
-
+        
         
         self.matriz_total = UtilidadesClustering.extraer_datos_completos(file_path)
         self.header = UtilidadesClustering.extraer_encabezado(file_path)

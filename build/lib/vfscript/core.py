@@ -32,3 +32,7 @@ from .training.training_btree import BehaviorTreeModel
 from  .predictors.vacancy_predictors_classified import VacancyModelTrainer
 from .predictors.mach_finger import FingerprintVacancyAssigner
 from .training.training_defect_fingerstyle import ClusterFeatureExporter
+from .training.training_btr_assing import ImprovedVacancyClassifier
+from .training.training_graph import AtomicGraphGenerator
+from . runner.deformation_analyzer import DeformationAnalyzer
+from . runner.ws_predictor import WSMet

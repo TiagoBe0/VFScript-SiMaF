@@ -4,6 +4,7 @@ from . import vfs
 from . import core
 from . import params
 from . import config_loader
+from . import vfs_win
 
 from .cluster_processing import *
 from .runner import *

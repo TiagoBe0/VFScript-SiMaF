@@ -6,7 +6,8 @@ import numpy as np
 class KeyFilesSeparator:
     def __init__(self, config, clusters_json_path):
         self.config = config
-        self.cluster_tolerance = config.get("cluster tolerance", 1.7)
+        self.cluster_tolerance = config['cluster tolerance'
+                                        ]
         self.clusters_json_path = clusters_json_path
         self.lista_clusters_final = []
         self.lista_clusters_criticos = []

@@ -160,5 +160,5 @@ def main():
     enriched.to_csv(output_csv, index=False)
     print(f'CSV enriquecido guardado en: {output_csv}')
 
-if __name__ == '__main__':
-    main()
+#if __name__ == '__main__':
+    #main()

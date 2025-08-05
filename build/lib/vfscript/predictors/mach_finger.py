@@ -43,8 +43,10 @@ class FingerprintVacancyAssigner:
         Xb["N"] *= self.weight_N
         Xq["N"] *= self.weight_N
 
-        # Similitud coseno y mejor índice
-        sim      = cosine_similarity(Xq.values, Xb.values)
+        Xq_clean = Xq.fillna(0)
+        Xb_clean = Xb.fillna(0)
+        sim = cosine_similarity(Xq_clean.values, Xb_clean.values)
+
         best_idx = sim.argmax(axis=1)
 
         # Extraigo vacancys directamente

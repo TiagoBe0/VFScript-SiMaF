@@ -4,6 +4,7 @@ setup.py
 src/vacancycalculator.egg-info/PKG-INFO
 src/vacancycalculator.egg-info/SOURCES.txt
 src/vacancycalculator.egg-info/dependency_links.txt
+src/vacancycalculator.egg-info/entry_points.txt
 src/vacancycalculator.egg-info/requires.txt
 src/vacancycalculator.egg-info/top_level.txt
 src/vfscript/__init__.py
@@ -12,6 +13,7 @@ src/vfscript/config_loader.py
 src/vfscript/core.py
 src/vfscript/params.py
 src/vfscript/vfs.py
+src/vfscript/vfs_win.py
 src/vfscript/cluster_processing/__init__.py
 src/vfscript/cluster_processing/cluster_macth.py
 src/vfscript/cluster_processing/cluster_processor.py
@@ -23,14 +25,16 @@ src/vfscript/predictors/mach_finger.py
 src/vfscript/predictors/vacancy_predictors.py
 src/vfscript/predictors/vacancy_predictors_classified.py
 src/vfscript/runner/__init__.py
+src/vfscript/runner/deformation_analyzer.py
 src/vfscript/runner/finger_runner.py
 src/vfscript/runner/vacancy_runner.py
+src/vfscript/runner/ws_predictor.py
 src/vfscript/surface_processor/__init__.py
 src/vfscript/surface_processor/cluster_dump_processor.py
 src/vfscript/surface_processor/surface_processor.py
 src/vfscript/training/__init__.py
 src/vfscript/training/cristal_structure_gen.py
-src/vfscript/training/synthetic_data.py
+src/vfscript/training/training_btr_assing.py
 src/vfscript/training/training_btree.py
 src/vfscript/training/training_defect_fingerstyle.py
 src/vfscript/training/training_fingerstyle.py

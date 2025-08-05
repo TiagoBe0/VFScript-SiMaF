@@ -9,33 +9,27 @@ from scipy.spatial import ConvexHull
 from ..config import CONFIG
 
 class SurfaceProcessor:
-    """
-    Procesa cada dump final calculando área y volumen mediante convex hull
-    en lugar de usar ConstructSurfaceModifier de OVITO. 
-    Luego exporta un CSV de resultados.
-    """
     def __init__(
         self,
         config=CONFIG[0],
         json_path="outputs/json/key_archivos.json",
-        threshold_file="outputs/json/key_single_vacancy.json"
+        threshold_file="outputs/json/training_graph.json"
     ):
         self.config = config
         self.json_path = json_path
 
-        
+        # Cargo clusters finales
         with open(self.json_path, "r", encoding="utf-8") as f:
-            self.data = json.load(f)
-        self.clusters_final = self.data.get("clusters_final", [])
-        self.results_matrix = None
+            data = json.load(f)
+        self.clusters_final = data.get("clusters_final", [])
 
-        
+        # Cargo umbrales desde un JSON que es una lista de registros
         with open(threshold_file, "r", encoding="utf-8") as f:
             threshold_data = json.load(f)
-        
-        self.min_area_threshold = threshold_data["surface_area"][0] / 2
-        self.min_filled_volume_threshold = threshold_data["filled_volume"][0] / 2
-
+        # Usamos el primer registro de la lista:
+        first = threshold_data[0]
+        self.min_area_threshold          = first["surface_area"]   / 2
+        self.min_filled_volume_threshold = first["filled_volume"]  / 2
     def _read_dump_coordinates(self, dump_file: str) -> np.ndarray:
         """
         Extrae las coordenadas (x,y,z) del dump LAMMPS. 

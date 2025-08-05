@@ -51,14 +51,16 @@ class AtomicGraphGenerator:
                 writer = csv.writer(csvfile)
                 writer.writerow(header)
     def run(self):
-        for _ in range(self.iterations):
-            for length in range(2, self.max_nodes + 1):
-                ids, _ = self._generate_graph(length)
+        for variation_idx in range(self.iterations):
+            for graph_size in range(1, self.max_nodes + 1):
+                ids, _ = self._generate_graph(graph_size)
                 expr = " || ".join(f"ParticleIdentifier=={pid}" for pid in ids)
 
-                # 1) exportar dump y calcular área/volumen
-                area, volume, count, dump_path = self._export_and_dump(expr)
-
+                area, volume, count, dump_path = self._export_and_dump(
+                    expr,
+                    graph_size,
+                    variation_idx
+                )
                 # 2) extraer normas y estadísticas
                 proc = DumpProcessor(dump_path)
                 proc.read_and_translate()
@@ -77,7 +79,7 @@ class AtomicGraphGenerator:
 
                 # 4) escribir línea en el CSV
                 row = [
-                    length,
+                    len(ids),
                     stats['N'],
                     stats['mean'],
                     stats['std'],
@@ -123,7 +125,7 @@ class AtomicGraphGenerator:
 
         return ids, coords
 
-    def _export_and_dump(self, expr: str):
+    def _export_and_dump(self, expr: str,i: int,a:int):
         p = copy.deepcopy(self.pipeline)
         p.modifiers.append(ExpressionSelectionModifier(expression=expr))
         p.modifiers.append(DeleteSelectedModifier())
@@ -148,7 +150,7 @@ class AtomicGraphGenerator:
 
         dump_dir  = "outputs/dump"
         os.makedirs(dump_dir, exist_ok=True)
-        dump_path = os.path.join(dump_dir, f"graph_{count}.dump")
+        dump_path = os.path.join(dump_dir, f"graph_{i}_{a}.dump")
         export_file(
             p, dump_path, 'lammps/dump',
             columns=[
@@ -159,6 +161,3 @@ class AtomicGraphGenerator:
         p.modifiers.clear()
         return area, volume, count, dump_path
 
-if __name__ == "__main__":
-    gen = AtomicGraphGenerator()
-    gen.run()

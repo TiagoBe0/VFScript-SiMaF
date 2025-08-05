@@ -226,6 +226,6 @@ class FeatureExporter:
         print(f"Se generó el CSV con características en: {self.output_csv}")
 
 
-if __name__ == "__main__":
-    exporter = FeatureExporter()
-    exporter.export()
+#if __name__ == "__main__":
+    #exporter = FeatureExporter()
+    #exporter.export()

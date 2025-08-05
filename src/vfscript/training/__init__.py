@@ -1,5 +1,4 @@
 from . import cristal_structure_gen
-from . import synthetic_data
 from . import training_fingerstyle
 from . import training_processor
 from . import utils
@@ -9,3 +8,4 @@ from . import training_graph
 from . import training_surface
 from . import training_btree
 from . import training_defect_fingerstyle
+from . import training_btr_assing

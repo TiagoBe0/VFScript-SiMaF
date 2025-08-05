@@ -125,24 +125,24 @@ class HSM:
 # ——————————————
 # Bloque principal
 # ——————————————
-if __name__ == "__main__":
+#if __name__ == "__main__":
     # 1) Leer JSON con rutas de dumps
-    key_file = resolve_input_params_path('outputs/json/key_archivos.json')
-    with open(key_file, 'r', encoding='utf-8') as jf:
-        config = json.load(jf)
+    #key_file = resolve_input_params_path('outputs/json/key_archivos.json')
+    #with open(key_file, 'r', encoding='utf-8') as jf:
+        #config = json.load(jf)
 
-    cluster_files = config.get('clusters_final', [])
-    ref_file = config['defect']  # tu red de referencia
+    #cluster_files = config.get('clusters_final', [])
+    #ref_file = config['defect']  # tu red de referencia
 
-    for cluster_path in cluster_files:
+    #for cluster_path in cluster_files:
         # Nombre base para salida
-        base = os.path.splitext(os.path.basename(cluster_path))[0]
-        out_dump = f'outputs/dump/{base}_inside.dump'
+        #base = os.path.splitext(os.path.basename(cluster_path))[0]
+        #out_dump = f'outputs/dump/{base}_inside.dump'
 
         # Procesar cada dump
-        proc = HSM(cluster_path)
-        proc.read_and_translate()
-        expr = proc.compute_hull_expression(strict=True)
-        print(f"Expresión para {cluster_path}:\n{expr}\n")
-        proc.apply_to_reference(ref_file, out_dump)
-        print(f"→ Dump filtrado escrito en: {out_dump}\n")
+        #proc = HSM(cluster_path)
+        #proc.read_and_translate()
+        #expr = proc.compute_hull_expression(strict=True)
+        #print(f"Expresión para {cluster_path}:\n{expr}\n")
+        #proc.apply_to_reference(ref_file, out_dump)
+        #print(f"→ Dump filtrado escrito en: {out_dump}\n")
