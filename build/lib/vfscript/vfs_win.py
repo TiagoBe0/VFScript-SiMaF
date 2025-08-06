@@ -4,11 +4,15 @@ import json
 import contextlib
 import traceback
 from pathlib import Path
+import os
+os.environ['QT_QPA_PLATFORM'] = 'xcb'
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QFormLayout, QCheckBox,
     QDoubleSpinBox, QSpinBox, QLineEdit, QPushButton, QFileDialog,
-    QMessageBox, QHBoxLayout, QPlainTextEdit, QVBoxLayout, QProgressBar, QSizePolicy
+    QMessageBox, QHBoxLayout, QPlainTextEdit, QVBoxLayout,
+    QProgressBar, QSizePolicy, QComboBox, QTableWidget, QTableWidgetItem
 )
 from pyvistaqt import QtInteractor
 import pyvista as pv
@@ -16,8 +20,7 @@ import numpy as np
 from ovito.io import import_file
 from ovito.modifiers import ConstructSurfaceModifier
 from vfscript import vfs  # import VacancyAnalysis
-
-# --- Nuevas importaciones para Matplotlib ---
+import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
@@ -39,35 +42,34 @@ def save_params(params):
 class SettingsWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        # Maximizar ventana
+        self.showMaximized()
         self.setWindowTitle("VacancyFinder-SiMAF   0.3.6.1")
-        self.resize(1200, 800)
 
         # Carga parámetros
         self.params = load_params()
         cfg = self.params.setdefault('CONFIG', [{}])[0]
 
-        # ------------------------------------------------
-        # Columna izquierda: controles + barra progreso + log
-        # ------------------------------------------------
+        # Layout principal de controles
         form_layout = QFormLayout()
 
-        # Progress bar
+        # Progreso
         self.progress = QProgressBar()
         self.progress.setRange(0, 100)
         self.progress.setValue(0)
         form_layout.addRow("Progreso:", self.progress)
 
-        # Output log (ahora ampliable)
+        # Log de salida
         self.log_output = QPlainTextEdit()
         self.log_output.setReadOnly(True)
-        self.log_output.setMinimumHeight(300)
+        self.log_output.setMinimumHeight(200)
         self.log_output.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         form_layout.addRow("Output Log:", self.log_output)
 
-        # Casillas booleanas
-        self.check_training    = QCheckBox()
+        # Checkboxes
+        self.check_training = QCheckBox()
         self.check_training.setChecked(cfg.get('training', False))
-        self.check_geometric   = QCheckBox()
+        self.check_geometric = QCheckBox()
         self.check_geometric.setChecked(cfg.get('geometric_method', False))
         self.check_activate_relax = QCheckBox()
         self.check_activate_relax.setChecked(cfg.get('activate_generate_relax', False))
@@ -76,12 +78,12 @@ class SettingsWindow(QMainWindow):
         form_layout.addRow("Activate Generate Relax:", self.check_activate_relax)
 
         # Campos generate_relax
-        gr = cfg.get('generate_relax', ["bcc", 1.0]) + [1, 1, 1, "Fe"]
+        gr = cfg.get('generate_relax', ["bcc", 1.0]) + [1,1,1,"Fe"]
         self.edit_lattice = QLineEdit(gr[0])
         self.edit_lattice_a = QLineEdit(str(gr[1]))
-        self.spin_rx = QSpinBox(); self.spin_rx.setRange(1,100); self.spin_rx.setValue(gr[2])
-        self.spin_ry = QSpinBox(); self.spin_ry.setRange(1,100); self.spin_ry.setValue(gr[3])
-        self.spin_rz = QSpinBox(); self.spin_rz.setRange(1,100); self.spin_rz.setValue(gr[4])
+        self.spin_rx = QSpinBox(); self._configure_spin(self.spin_rx, 1, 100, gr[2])
+        self.spin_ry = QSpinBox(); self._configure_spin(self.spin_ry, 1, 100, gr[3])
+        self.spin_rz = QSpinBox(); self._configure_spin(self.spin_rz, 1, 100, gr[4])
         self.edit_atom = QLineEdit(gr[5])
         form_layout.addRow("Lattice Type:", self.edit_lattice)
         form_layout.addRow("Lattice Param a:", self.edit_lattice_a)
@@ -103,29 +105,35 @@ class SettingsWindow(QMainWindow):
         dbx = QHBoxLayout(); dbx.addWidget(self.edit_defect); dbx.addWidget(btn_defect)
         form_layout.addRow("Defect Dump:", dbx)
 
-        # Campos numéricos
+        # Selector de CSV y botón
+        self.csv_combo = QComboBox()
+        self._refresh_csv_list()
+        form_layout.addRow("Resultados CSV:", self.csv_combo)
+        btn_csv = QPushButton("Cargar CSV")
+        btn_csv.clicked.connect(self.load_csv_results)
+        form_layout.addRow(btn_csv)
+
+        # Campos numéricos configurables
         fields = [
-            "radius", "cutoff", "max_graph_size", "max_graph_variations",
-            "radius_training", "training_file_index",
-            "cluster tolerance", "divisions_of_cluster", "iteraciones_clusterig"
+            ("radius", QDoubleSpinBox, 0, 100, cfg.get('radius', 0.0), 3),
+            ("cutoff", QDoubleSpinBox, 0, 100, cfg.get('cutoff', 0.0), 3),
+            ("max_graph_size", QSpinBox, 0, 10000, cfg.get('max_graph_size', 0), 0),
+            ("max_graph_variations", QSpinBox, 0, 10000, cfg.get('max_graph_variations', 0), 0),
+            ("radius_training", QDoubleSpinBox, 0, 100, cfg.get('radius_training', 0.0), 3),
+            ("training_file_index", QSpinBox, 0, 10000, cfg.get('training_file_index', 0), 0),
+            ("cluster tolerance", QDoubleSpinBox, 0, 100, cfg.get('cluster tolerance', 0.0), 3),
+            ("divisions_of_cluster", QSpinBox, 0, 10000, cfg.get('divisions_of_cluster', 0), 0),
+            ("iteraciones_clusterig", QSpinBox, 0, 10000, cfg.get('iteraciones_clusterig', 0), 0)
         ]
-        spins = [
-            QDoubleSpinBox(), QDoubleSpinBox(), QSpinBox(), QSpinBox(),
-            QDoubleSpinBox(), QSpinBox(), QDoubleSpinBox(), QSpinBox(), QSpinBox()
-        ]
-        for name, spin in zip(fields, spins):
-            if isinstance(spin, QDoubleSpinBox):
-                spin.setRange(0,100)
-                spin.setDecimals(3)
-            else:
-                spin.setRange(0,10000)
-            spin.setValue(cfg.get(name, 0))
-            form_layout.addRow(name.replace('_', ' ').title() + ":", spin)
-        (
-            self.spin_radius, self.spin_cutoff, self.spin_max_nodes, self.spin_iterations,
-            self.spin_radius_tr, self.spin_train_idx, self.spin_cluster_tol,
-            self.spin_divisions, self.spin_iter_cluster
-        ) = spins
+        for name, cls, mn, mx, val, dec in fields:
+            widget = cls()
+            if issubclass(cls, QDoubleSpinBox):
+                widget.setDecimals(dec)
+            widget.setRange(mn, mx)
+            widget.setValue(val)
+            self._configure_spin(widget, mn, mx, val)
+            setattr(self, f"spin_{name}".replace(' ', '_'), widget)
+            form_layout.addRow(f"{name.replace('_',' ').title()}:", widget)
 
         # Botones de acción
         btn_save = QPushButton("Save Settings")
@@ -135,28 +143,30 @@ class SettingsWindow(QMainWindow):
         hb = QHBoxLayout(); hb.addWidget(btn_save); hb.addWidget(btn_run)
         form_layout.addRow(hb)
 
+        # Widget de controles
         controls_widget = QWidget()
         controls_widget.setLayout(form_layout)
-        controls_widget.setFixedWidth(int(320 * 1.3))  # ancho aumentado un 30%
+        controls_widget.setFixedWidth(int(320 * 1.3))
         controls_widget.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
 
-        # ------------------------------------------------
-        # Columna derecha: 3D + 2D
-        # ------------------------------------------------
+        # Panel de visualización 3D, 2D y tabla
         viewer_widget = QWidget()
         viewer_layout = QVBoxLayout(viewer_widget)
-        viewer_layout.setContentsMargins(0,0,0,0)
+        viewer_layout.setContentsMargins(0, 0, 0, 0)
 
-        # 1) PyVista 3D
+        # 3D
         self.plotter = QtInteractor(viewer_widget)
         viewer_layout.addWidget(self.plotter)
-
-        # 2) Matplotlib 2D
+        # 2D
         self.fig = plt.figure(figsize=(4,4))
         self.canvas = FigureCanvas(self.fig)
         viewer_layout.addWidget(self.canvas)
+        # Tabla CSV
+        self.table = QTableWidget()
+        self.table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        viewer_layout.addWidget(self.table)
 
-        # Componer la ventana principal
+        # Set central
         main = QWidget()
         hl = QHBoxLayout(main)
         hl.setContentsMargins(5,5,5,5)
@@ -165,21 +175,56 @@ class SettingsWindow(QMainWindow):
         hl.addWidget(viewer_widget, 1)
         self.setCentralWidget(main)
 
-        # Cargo inicialmente key_areas.dump si existe
+        # Carga inicial de dump
         dump_path = Path.cwd() / 'outputs' / 'dump' / 'key_areas.dump'
         if dump_path.exists():
             self.load_dump(str(dump_path))
         else:
             QMessageBox.warning(self, "No encontrado",
-                                 f"No existe el fichero:\n{dump_path}")
+                                f"No existe el fichero:\n{dump_path}")
+
+    def _configure_spin(self, spin, mn, mx, val):
+        """Habilita edición por teclado en spin boxes"""
+        spin.setRange(mn, mx)
+        spin.setValue(val)
+        spin.setKeyboardTracking(True)
+        spin.setReadOnly(False)
+        spin.setFocusPolicy(Qt.StrongFocus)
+
+    def _refresh_csv_list(self):
+        """Rellena el combo con todos los .csv de outputs/csv/"""
+        csv_dir = Path.cwd() / 'outputs' / 'csv'
+        self.csv_combo.clear()
+        if csv_dir.exists():
+            for f in sorted(csv_dir.glob('*.csv')):
+                self.csv_combo.addItem(f.name)
+
+    def load_csv_results(self):
+        nombre = self.csv_combo.currentText()
+        if not nombre:
+            QMessageBox.warning(self, "Sin selección", "No has elegido ningún CSV.")
+            return
+        ruta = Path.cwd() / 'outputs' / 'csv' / nombre
+        try:
+            df = pd.read_csv(ruta)
+        except Exception as e:
+            QMessageBox.critical(self, "Error al leer CSV", str(e))
+            return
+        # Rellenar tabla
+        self.table.clear()
+        self.table.setColumnCount(len(df.columns))
+        self.table.setRowCount(len(df))
+        self.table.setHorizontalHeaderLabels(df.columns.tolist())
+        for i in range(len(df)):
+            for j, col in enumerate(df.columns):
+                self.table.setItem(i, j, QTableWidgetItem(str(df.iat[i, j])))
+        self.table.resizeColumnsToContents()
 
     def save_settings_and_notify(self):
-        """Guarda parámetros y muestra notificación"""
         self.save_settings()
         QMessageBox.information(self, "Settings Saved", "Parameters saved to input_params.json")
 
     def save_settings(self):
-        """Sincroniza widgets con input_params.json"""
         cfg = self.params['CONFIG'][0]
         cfg['training'] = self.check_training.isChecked()
         cfg['geometric_method'] = self.check_geometric.isChecked()
@@ -187,24 +232,19 @@ class SettingsWindow(QMainWindow):
         cfg['generate_relax'] = [
             self.edit_lattice.text(),
             float(self.edit_lattice_a.text()),
-            self.spin_rx.value(), self.spin_ry.value(),
-            self.spin_rz.value(), self.edit_atom.text().strip() or 'Fe'
+            self.spin_rx.value(), self.spin_ry.value(), self.spin_rz.value(),
+            self.edit_atom.text().strip() or 'Fe'
         ]
         cfg['relax'] = self.edit_relax.text()
         cfg['defect'] = [self.edit_defect.text()]
-        cfg['radius'] = self.spin_radius.value()
-        cfg['cutoff'] = self.spin_cutoff.value()
-        cfg['max_graph_size'] = self.spin_max_nodes.value()
-        cfg['max_graph_variations'] = self.spin_iterations.value()
-        cfg['radius_training'] = self.spin_radius_tr.value()
-        cfg['training_file_index'] = self.spin_train_idx.value()
-        cfg['cluster tolerance'] = self.spin_cluster_tol.value()
-        cfg['divisions_of_cluster'] = self.spin_divisions.value()
-        cfg['iteraciones_clusterig'] = self.spin_iter_cluster.value()
+        for key in ['radius', 'cutoff', 'max_graph_size', 'max_graph_variations',
+                    'radius_training', 'training_file_index', 'cluster tolerance',
+                    'divisions_of_cluster', 'iteraciones_clusterig']:
+            widget = getattr(self, f"spin_{key}".replace(' ', '_'))
+            cfg[key] = widget.value()
         save_params(self.params)
 
     def browse_file(self, line_edit):
-        """Abre diálogo para seleccionar un fichero dump"""
         abs_path, _ = QFileDialog.getOpenFileName(
             self, "Select Dump File", "", "Dump Files (*.dump);;All Files (*)"
         )
@@ -251,8 +291,8 @@ class SettingsWindow(QMainWindow):
         self.canvas.draw()
         self.progress.setValue(100)
 
+
     def run_vacancy_analysis(self):
-        """Ejecuta VacancyAnalysis y muestra el log"""
         self.log_output.clear()
         buf = io.StringIO()
         self.progress.setRange(0, 0)
@@ -263,6 +303,8 @@ class SettingsWindow(QMainWindow):
             self.progress.setValue(100)
             self.log_output.setPlainText(buf.getvalue())
             QMessageBox.information(self, "Análisis completado", "VacancyAnalysis terminó correctamente.")
+            # refrescar CSV
+            self._refresh_csv_list()
             dump_path = Path.cwd() / 'outputs' / 'dump' / 'key_areas.dump'
             if dump_path.exists():
                 self.load_dump(str(dump_path))
@@ -270,18 +312,16 @@ class SettingsWindow(QMainWindow):
             self.progress.setRange(0, 100)
             self.progress.setValue(0)
             buf.write(traceback.format_exc())
-            self.plotter.clear()
             self.log_output.setPlainText(buf.getvalue())
             QMessageBox.critical(self, "Error en análisis", "Falló VacancyAnalysis. Revisa el log.")
 
 
 def main():
-    from PySide6.QtWidgets import QApplication
-    import sys
     app = QApplication(sys.argv)
     win = SettingsWindow()
     win.show()
     sys.exit(app.exec())
+
 
 if __name__ == "__main__":
     main()
