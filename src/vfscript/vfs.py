@@ -105,7 +105,9 @@ def VacancyAnalysis():
 
             # ------------------------------------------------------------------------
             # 8. Entrenar y clasificar defectos con el nuevo modelo ensemble
-
+            if configuracion['geometric_method']:
+                analyzer = WSMet("inputs/void_15.dump", "bcc", "Fe", tolerance=0.5)
+                vac_positions = analyzer.run()
             # Instancia y entrena el modelo
             clf = ImprovedVacancyClassifier(json_path='outputs/json/training_graph.json')
             clf.train()  
