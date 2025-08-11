@@ -4,38 +4,40 @@
 
 ```json
 {
-  "CONFIG": [
-    {
-      "other method": true,
-      "activate_generate_relax": true,
-      "generate_relax": [
-        "bcc",
-        "2.55",
-        10,
-        10,
-        10
-      ],
-      "relax": "inputs/fe0",
-      "defect": [
-        "inputs/fe2"
-      ],
-      "radius": 2,
-      "smoothing_level": 0,
-      "smoothing_level_training": 0,
-      "cutoff": 3,
-      "radius_training": 3,
-      "training_file_index": 50,
-      "cluster tolerance": 2,
-      "divisions_of_cluster": 6,
-      "iteraciones_clusterig": 4
-    }
-  ],
-  "PREDICTOR_COLUMNS": [
-    "surface_area",
-    "filled_volume",
-    "cluster_size",
-    "mean_distance"
-  ]
+    "CONFIG": [
+        {   "training":true,
+            "geometric_method":false,
+            "activate_generate_relax": true,
+            "generate_relax": [
+                "bcc",
+                "3.4359",
+                10,10,10,
+                "Fe"
+            ],
+            "relax": "inputs/relax_structure.dump",
+            "defect": [
+
+                "inputs/fe_2v"
+            ],
+            "radius": 2,
+            "smoothing_level": 0,
+            "smoothing_level_training": 0,
+            "max_graph_size": 15,
+            "max_graph_variations": 10,
+            
+            "cutoff": 3,
+            "radius_training": 5,
+            "training_file_index":15,
+            "cluster tolerance": 2,
+            "divisions_of_cluster": 6,
+            "iteraciones_clusterig": 4
+        }
+    ],
+    "PREDICTOR_COLUMNS": [
+        "surface_area",
+        "filled_volume",
+        "cluster_size"
+    ]
 }
 
 📌 Instrucciones clave
