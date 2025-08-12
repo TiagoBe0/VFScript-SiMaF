@@ -482,11 +482,9 @@ class SettingsWindow(QMainWindow):
             msg.setWindowTitle("Total de vacancias")
             msg.setText(
                 f"<h2 style='margin:0'>Total de vacancias: {total_int}</h2>"
-                f"<p style='margin-top:8px'>Archivo: {path.as_posix()}<br>"
-                f"Columna usada: <b>{col}</b><br>"
-                f"Suma exacta: {total:.2f}</p>"
             )
             msg.exec()
+            print(f"Vacancias totales: {total_int}")
 
         except Exception as e:
             QMessageBox.critical(self, "Error calculando total", str(e))

@@ -56,10 +56,10 @@ class ImprovedVacancyClassifier:
 
         # Evaluar en test
         y_pred = self.model.predict(X_test)
-        print("==> Mejoros parámetros:")
-        print(search.best_params_)
-        print("\n==> Reporte en test:")
-        print(classification_report(y_test, y_pred, target_names=self.label_map.values()))
+        # print("==> Mejoros parámetros:")
+        # print(search.best_params_)
+        # print("\n==> Reporte en test:")
+        # print(classification_report(y_test, y_pred, target_names=self.label_map.values()))
 
         # Guardar
         joblib.dump(self.model, "best_vacancy_model.pkl")

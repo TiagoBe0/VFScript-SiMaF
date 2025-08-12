@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='vacancycalculator',
-    version='0.4.0.2',
+    version='0.4.0.4',
     author='E.Bringa-S.Bergamin-SiMaF',
     author_email='santiagobergamin@gmail.com',
     license='MIT',

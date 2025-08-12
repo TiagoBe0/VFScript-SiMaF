@@ -71,7 +71,7 @@ class VacancyModelTrainer:
 
         # Grupo SOLO para entrenamiento (se usa el target real para etiquetar)
         self.df['grupo'] = self.df[self.target].apply(self._clasificar_grupo)
-        print(f"✅ Datos cargados: {len(self.df)} filas. Grupos: {self.df['grupo'].value_counts().to_dict()}")
+        #print(f"✅ Datos cargados: {len(self.df)} filas. Grupos: {self.df['grupo'].value_counts().to_dict()}")
 
     @staticmethod
     def _clasificar_grupo(vac: float) -> str:
@@ -118,16 +118,16 @@ class VacancyModelTrainer:
 
         # Evaluación rápida
         y_pred_enc = self.group_clf.predict(X_te)
-        print("✅ Clasificador de grupo entrenado:")
-        print(classification_report(self.label_encoder.inverse_transform(y_te),
-                                   self.label_encoder.inverse_transform(y_pred_enc),
-                                   labels=self.GROUPS))
+        #print("✅ Clasificador de grupo entrenado:")
+        ##print(classification_report(self.label_encoder.inverse_transform(y_te),
+         #                          self.label_encoder.inverse_transform(y_pred_enc),
+         #                          labels=self.GROUPS))
 
         # Guardar modelos del clasificador
         joblib.dump(self.group_clf, self._model_path_clf())
         joblib.dump(self.label_encoder, self._model_path_le())
-        print(f"💾 Clasificador guardado en: {self._model_path_clf()}")
-        print(f"💾 LabelEncoder guardado en: {self._model_path_le()}")
+        #print(f"💾 Clasificador guardado en: {self._model_path_clf()}")
+        #print(f"💾 LabelEncoder guardado en: {self._model_path_le()}")
 
     def train_all_regressors(self, test_size: float = 0.2, random_state: int = 42, min_rows_per_group: int = 3):
         """
@@ -160,13 +160,13 @@ class VacancyModelTrainer:
 
             y_pred = reg.predict(X_te)
             mse = mean_squared_error(y_te, y_pred)
-            print(f"✅ Regresor grupo {grupo} entrenado. MSE: {mse:.4f}")
+            #print(f"✅ Regresor grupo {grupo} entrenado. MSE: {mse:.4f}")
 
             self.group_regressors[grupo] = reg
             joblib.dump(reg, self._model_path_reg(grupo))
-            print(f"💾 Guardado: {self._model_path_reg(grupo)}")
+            #print(f"💾 Guardado: {self._model_path_reg(grupo)}")
 
-        print("✔️ Entrenamiento de regresores por grupo finalizado.")
+        #print("✔️ Entrenamiento de regresores por grupo finalizado.")
 
     # ---------------------------
     # Carga de modelos ya guardados
@@ -177,7 +177,7 @@ class VacancyModelTrainer:
         if os.path.exists(clf_path) and os.path.exists(le_path):
             self.group_clf = joblib.load(clf_path)
             self.label_encoder = joblib.load(le_path)
-            print(f"📦 Clasificador cargado: {clf_path}")
+            #print(f"📦 Clasificador cargado: {clf_path}")
         else:
             print("ℹ️ No se encontró clasificador/label encoder guardado.")
 
@@ -186,7 +186,7 @@ class VacancyModelTrainer:
             p = self._model_path_reg(g)
             if os.path.exists(p):
                 self.group_regressors[g] = joblib.load(p)
-                print(f"📦 Regresor {g} cargado: {p}")
+                #print(f"📦 Regresor {g} cargado: {p}")
 
     # ---------------------------
     # Predicción helpers
@@ -255,11 +255,11 @@ class VacancyModelTrainer:
         # Obtener/Inferir grupo
         if 'grupo_predicho' in df.columns:
             grupos = df['grupo_predicho'].astype(str)
-            print("ℹ️ Usando 'grupo_predicho' provisto en el CSV.")
+            #print("ℹ️ Usando 'grupo_predicho' provisto en el CSV.")
         else:
             grupos = self._infer_group(df)
             df['grupo_predicho'] = grupos
-            print("🔎 Grupo inferido con el clasificador.")
+            #print("🔎 Grupo inferido con el clasificador.")
 
         # Predicciones enrutadas por grupo
         preds: List[float] = []
@@ -269,8 +269,8 @@ class VacancyModelTrainer:
             preds.append(pred)
 
         df['predicted_vacancy'] = preds
-        print("🔮 Predicciones completadas (primeras 5 filas):")
-        print(df[['grupo_predicho', 'predicted_vacancy']].head())
+        #print("🔮 Predicciones completadas (primeras 5 filas):")
+        #print(df[['grupo_predicho', 'predicted_vacancy']].head())
         return df
 
 

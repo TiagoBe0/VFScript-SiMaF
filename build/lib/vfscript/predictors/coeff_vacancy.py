@@ -239,7 +239,7 @@ class GroupCoefficientCalculator:
         if out_path:
             Path(out_path).parent.mkdir(parents=True, exist_ok=True)
             df_out.to_csv(out_path, index=False)
-            print(f"✅ Guardado: {out_path}")
+            # print(f"✅ Guardado: {out_path}")
 
         return df_out
 
