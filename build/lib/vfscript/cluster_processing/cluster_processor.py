@@ -268,7 +268,8 @@ class ClusterProcessorMachine:
     def __init__(
         self,
         file_path: str,
-        json_params_path: str = "input_params.json"
+        json_params_path: str = "input_params.json",
+        iteraciones=None
     ):
         """
         Carga parámetros desde input_params.json si es necesario (p.ej. min_atoms),

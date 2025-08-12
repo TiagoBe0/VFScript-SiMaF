@@ -80,9 +80,10 @@ def VacancyAnalysis():
             # 4. Subdivisión iterativa
             lista_criticos = ClusterDumpProcessor.cargar_lista_archivos_criticos("outputs/json/key_archivos.json")
             for archivo in lista_criticos:
-                machine_proc = ClusterProcessorMachine(archivo, configuracion['cluster tolerance'], configuracion['iteraciones_clusterig'])
+                machine_proc = ClusterProcessorMachine(archivo)  # o ClusterProcessorMachine(archivo, "input_params.json")
                 machine_proc.process_clusters()
                 machine_proc.export_updated_file()
+
 
             # 5. Separar archivos finales vs críticos
             separator = KeyFilesSeparator(configuracion, os.path.join("outputs/json", "clusters.json"))
