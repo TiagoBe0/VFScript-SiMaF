@@ -210,14 +210,14 @@ class VacancyPredictionRunner:
                 (num_atm == self.ref_vecinos)):
                 vacancias_pred = 1
                 total_count += 1
-                print(f"[XGB] Cluster {i}: Condición directa → 1")
+                #print(f"[XGB] Cluster {i}: Condición directa → 1")
 
             elif (math.isclose(area, self.ref_area_diva, rel_tol=0.2) or
                   math.isclose(filled_volume, self.ref_filled_volume_diva, rel_tol=0.2) or
                   (num_atm == self.ref_vecinos_diva)):
                 vacancias_pred = 2
                 total_count += 2
-                print(f"[XGB] Cluster {i}: Condición secundaria → 2")
+                #print(f"[XGB] Cluster {i}: Condición secundaria → 2")
 
             else:
                 features = {}
@@ -235,10 +235,10 @@ class VacancyPredictionRunner:
 
                 if area < threshold:
                     vacancias_pred = self.predictor_xgb_small.predict(arr_input_small)[0]
-                    print(f"[XGB] Cluster {i}: Usando predictor_xgb_small → {vacancias_pred}")
+                    #print(f"[XGB] Cluster {i}: Usando predictor_xgb_small → {vacancias_pred}")
                 else:
                     vacancias_pred = self.predictor_xgb_large.predict(arr_input_large)[0]
-                    print(f"[XGB] Cluster {i}: Usando predictor_xgb_large → {vacancias_pred}")
+                    #print(f"[XGB] Cluster {i}: Usando predictor_xgb_large → {vacancias_pred}")
 
                 total_count += vacancias_pred
 
@@ -248,7 +248,7 @@ class VacancyPredictionRunner:
             else:
                 errors.append(None)
 
-        print(f"[XGB] Total vacancias predichas = {abs(total_count)}\n")
+        #print(f"[XGB] Total vacancias predichas = {abs(total_count)}\n")
         return abs(total_count), predictions, errors
 
     def predict_mlp(self) -> tuple:
@@ -268,14 +268,14 @@ class VacancyPredictionRunner:
                 (num_atm == self.ref_vecinos)):
                 vacancias_pred = 1
                 total_count += 1
-                print(f"[MLP] Cluster {i}: Condición directa → 1")
+                #print(f"[MLP] Cluster {i}: Condición directa → 1")
 
             elif (math.isclose(area, self.ref_area_diva, rel_tol=0.2) or
                   math.isclose(filled_volume, self.ref_filled_volume_diva, rel_tol=0.2) or
                   (num_atm == self.ref_vecinos_diva)):
                 vacancias_pred = 2
                 total_count += 2
-                print(f"[MLP] Cluster {i}: Condición secundaria → 2")
+                #print(f"[MLP] Cluster {i}: Condición secundaria → 2")
 
             else:
                 features = {}
@@ -290,10 +290,10 @@ class VacancyPredictionRunner:
 
                 if area < threshold:
                     vacancias_pred = self.predictor_mlp_small.predict_vacancies(**features)
-                    print(f"[MLP] Cluster {i}: Usando predictor_mlp_small → {vacancias_pred}")
+                    #print(f"[MLP] Cluster {i}: Usando predictor_mlp_small → {vacancias_pred}")
                 else:
                     vacancias_pred = self.predictor_mlp_large.predict_vacancies(**features)
-                    print(f"[MLP] Cluster {i}: Usando predictor_mlp_large → {vacancias_pred}")
+                    #print(f"[MLP] Cluster {i}: Usando predictor_mlp_large → {vacancias_pred}")
 
                 total_count += vacancias_pred
 
@@ -303,7 +303,7 @@ class VacancyPredictionRunner:
             else:
                 errors.append(None)
 
-        print(f"[MLP] Total vacancias predichas = {abs(total_count)}\n")
+        #print(f"[MLP] Total vacancias predichas = {abs(total_count)}\n")
         return abs(total_count), predictions, errors
 
     def run(self) -> dict:
@@ -340,7 +340,7 @@ class VacancyPredictionRunner:
             "errors": err_xgb
         }
 
-        print("[Runner] Resumen de predicciones:")
+        #print("[Runner] Resumen de predicciones:")
         for method, data in self.results.items():
             print(f"  Modelo {method}: Total predicho = {data['total']}")
 
@@ -357,7 +357,7 @@ class VacancyPredictionRunner:
         base_name = os.path.basename(self.archivo)
         output_file = os.path.join(output_dir, f"{base_name}_totals.csv")
         df_totals.to_csv(output_file, index=False)
-        print(f"[Runner] Archivo de totales exportado: {output_file}")
+        #print(f"[Runner] Archivo de totales exportado: {output_file}")
 
     def export_predictions_per_cluster(self, output_csv: str = None):
         """
@@ -380,7 +380,7 @@ class VacancyPredictionRunner:
 
         os.makedirs(os.path.dirname(output_csv), exist_ok=True)
         df.to_csv(output_csv, index=False)
-        print(f"[Runner] Archivo de predicciones por cluster exportado: {output_csv}")
+        #print(f"[Runner] Archivo de predicciones por cluster exportado: {output_csv}")
 
     def export_predictions_accumulated(self, iteration: int, output_csv: str = "outputs_tt/accumulated_predictions.csv"):
         """
@@ -403,4 +403,4 @@ class VacancyPredictionRunner:
             df_iteration.to_csv(output_csv, mode='a', index=False, header=False)
         else:
             df_iteration.to_csv(output_csv, index=False)
-        print(f"[Runner] Archivo acumulado exportado: {output_csv}")
+        #print(f"[Runner] Archivo acumulado exportado: {output_csv}")

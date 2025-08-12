@@ -39,7 +39,7 @@ def VacancyAnalysis():
         analyzer = DeformationAnalyzer(FILE, configuracion['generate_relax'][0], configuracion['generate_relax'][5], threshold=0.02)
         delta = analyzer.compute_metric()
         method = analyzer.select_method()
-        print(f"Métrica δ = {delta:.4f}, método seleccionado: {method}")
+        #print(f"Métrica δ = {delta:.4f}, método seleccionado: {method}")
         
         # 2) Condicional
         if method == 'geometric' and configuracion['geometric_method']:
@@ -119,7 +119,7 @@ def VacancyAnalysis():
                 csv_path='outputs/csv/defect_data.csv',
                 output_path='outputs/csv/finger_data_clasificado.csv'
             )
-            print(df_clasif[['archivo','grupo_predicho']])
+            #print(df_clasif[['archivo','grupo_predicho']])
             # ------------------------------------------------------------------------
             # 9. Predicción de vacancias según grupo_predicho
             # Como ImprovedVacancyClassifier usa la misma API de train/classify,
@@ -165,7 +165,7 @@ def VacancyAnalysis():
             out_df = trainer.predict_from_csv("outputs/csv/finger_data_clasificado.csv")
 
             out_df.to_csv("outputs/csv/results.csv", index=False)
-            print("✅ Guardado results.csv")
+            #print("✅ Guardado results.csv")
         # Ejemplo de uso
             assigner = FingerprintVacancyAssigner(
                 base_csv_path="outputs/csv/finger_data.csv",
@@ -174,10 +174,26 @@ def VacancyAnalysis():
             )
             df_result = assigner.assign()
             df_result.to_csv("outputs/csv/finger_key_files_clasificado.csv", index=False)
-            print("✅ Resultado guardado con peso_N =", assigner.weight_N)
+            #print("✅ Resultado guardado con peso_N =", assigner.weight_N)
 
         else:
             raise RuntimeError(f"Método desconocido: {method}")
+        
+
+        #ESTIMACION POR CLASIGICACION DE COEFICIENTE DE VACANCIA AREA
+        calc = GroupCoefficientCalculator("outputs/json/training_graph.json")
+        calc.load()
+        # Usa mínimos teóricos (1,4,7,10) y redondeo hacia arriba (ceil)
+        out = calc.estimate_from_defect_csv(
+            defect_csv_path="outputs/csv/finger_data_clasificado.csv",
+            group_col=None,                 # detecta entre ['grupo_predicho','grupo','Group','label','group']
+            surface_area_col="surface_area",
+            out_path="outputs/csv/defect_data_estimated.csv",
+            use_observed_min_instead=False, # pon True si querés dividir por el min OBSERVADO del grupo
+            round_mode="ceil"
+        )
+        #print(out.head())
+
             
 
 if __name__ == "__main__":

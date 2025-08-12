@@ -36,3 +36,4 @@ from .training.training_btr_assing import ImprovedVacancyClassifier
 from .training.training_graph import AtomicGraphGenerator
 from . runner.deformation_analyzer import DeformationAnalyzer
 from . runner.ws_predictor import WSMet
+from . predictors.coeff_vacancy import  GroupCoefficientCalculator

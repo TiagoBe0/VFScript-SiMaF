@@ -21,6 +21,7 @@ src/vfscript/cluster_processing/cluster_processor_machine.py
 src/vfscript/cluster_processing/export_cluster_list.py
 src/vfscript/cluster_processing/key_files_separator.py
 src/vfscript/predictors/__init__.py
+src/vfscript/predictors/coeff_vacancy.py
 src/vfscript/predictors/mach_finger.py
 src/vfscript/predictors/vacancy_predictors.py
 src/vfscript/predictors/vacancy_predictors_classified.py

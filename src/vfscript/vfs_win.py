@@ -278,7 +278,7 @@ class SettingsWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.showMaximized()
-        self.setWindowTitle("VacancyFinder-SiMAF   0.3.7.9")
+        self.setWindowTitle("VacancyFinder-SiMAF   0.3.9.4")
 
         self.params = load_params()
         cfg = self.params.setdefault('CONFIG', [{}])[0]
@@ -366,7 +366,16 @@ class SettingsWindow(QMainWindow):
         # Botones
         btn_save = QPushButton("Save Settings"); btn_save.clicked.connect(self.save_settings_and_notify)
         btn_run = QPushButton("Run VacancyAnalysis"); btn_run.clicked.connect(self.run_vacancy_analysis)
+        btn_total = QPushButton("Total Vacancies"); btn_total.clicked.connect(self.show_total_vacancies)  # ⬅️ nuevo
+
         hb = QHBoxLayout(); hb.addWidget(btn_save); hb.addWidget(btn_run)
+
+        form_layout.addRow(hb)
+
+        hb = QHBoxLayout()
+        hb.addWidget(btn_save)
+        hb.addWidget(btn_run)
+        hb.addWidget(btn_total)  # ⬅️ nuevo
         form_layout.addRow(hb)
 
         # Panel izquierdo (controles)
@@ -442,6 +451,45 @@ class SettingsWindow(QMainWindow):
             widget = getattr(self, f"spin_{key}".replace(' ', '_'))
             cfg[key] = widget.value()
         return save_params(self.params)
+    def show_total_vacancies(self):
+        """Abre una ventana con el total de vacancias de outputs/csv/results.csv."""
+        try:
+            path = Path.cwd() / 'outputs' / 'csv' / 'results.csv'
+            if not path.exists():
+                QMessageBox.warning(self, "Archivo no encontrado",
+                                    f"No existe:\n{path.as_posix()}")
+                return
+
+            df = pd.read_csv(path)
+
+            # columnas candidatas donde puede estar el número de vacancias por fila
+            candidates = ["predicted_vacancy", "vacancys_est", "vacancys", "predicted", "vacancy"]
+            col = next((c for c in candidates if c in df.columns), None)
+            if col is None:
+                QMessageBox.critical(
+                    self, "Columna no encontrada",
+                    "No se encontró ninguna de estas columnas en results.csv:\n"
+                    + ", ".join(candidates)
+                )
+                return
+
+            vals = pd.to_numeric(df[col], errors='coerce').fillna(0.0)
+            total = float(vals.sum())
+            total_int = int(np.ceil(total))  # redondeo hacia arriba por si hay decimales
+
+            # Mensaje bonito
+            msg = QMessageBox(self)
+            msg.setWindowTitle("Total de vacancias")
+            msg.setText(
+                f"<h2 style='margin:0'>Total de vacancias: {total_int}</h2>"
+                f"<p style='margin-top:8px'>Archivo: {path.as_posix()}<br>"
+                f"Columna usada: <b>{col}</b><br>"
+                f"Suma exacta: {total:.2f}</p>"
+            )
+            msg.exec()
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error calculando total", str(e))
 
     def _refresh_csv_list(self):
         csv_dir = Path.cwd() / 'outputs' / 'csv'

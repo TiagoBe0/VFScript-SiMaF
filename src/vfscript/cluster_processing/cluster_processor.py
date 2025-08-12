@@ -16,6 +16,27 @@ from vfscript.utils.utilidades_clustering import UtilidadesClustering
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_samples
 
+
+def _get_param(config, names, default=None, cast=None):
+    """
+    Devuelve el primer valor existente en config para alguna de las claves en `names`.
+    Aplica `cast` si se provee. Si ninguna clave existe, devuelve `default`.
+    """
+    for n in names:
+        if n in config and config[n] is not None:
+            val = config[n]
+            if cast is not None:
+                try:
+                    return cast(val)
+                except Exception:
+                    # intenta caster strings numéricas, etc.
+                    if cast in (int, float):
+                        try:
+                            return cast(float(val))
+                        except Exception:
+                            pass
+            return val
+    return default
 def merge_clusters(labels, c1, c2):
     new_labels = np.copy(labels)
     new_labels[new_labels == c2] = c1
@@ -110,14 +131,12 @@ def iterative_fusion_and_subdivision(coords, init_labels, threshold=1.2, max_ite
 class ClusterProcessor:
     def __init__(self, defect: str, json_params_path: str = None):
         """
-        Si no se pasa json_params_path, busca 'input_params.json' en el directorio actual del usuario.
+        Si no se pasa json_params_path, busca 'input_params.json' en el cwd.
+        Usa el `defect` recibido; si está vacío, cae al de la config (y si es lista, toma el primero).
         """
-
-        
         if json_params_path is None:
             json_params_path = os.path.join(os.getcwd(), "input_params.json")
 
-        
         try:
             with open(json_params_path, "r", encoding="utf-8") as f:
                 all_params = json.load(f)
@@ -126,29 +145,29 @@ class ClusterProcessor:
         except json.JSONDecodeError as e:
             raise ValueError(f"El JSON en {json_params_path} está mal formado: {e}")
 
-       
         if "CONFIG" not in all_params or not isinstance(all_params["CONFIG"], list) or len(all_params["CONFIG"]) == 0:
             raise KeyError("input_params.json debe contener una lista bajo la clave 'CONFIG'.")
-        
+
         self.config = all_params["CONFIG"][0]
 
-        
+        # --- usar el parámetro defect que recibe el constructor
+        self.nombre_archivo = defect if defect else self.config.get("defect")
+        if isinstance(self.nombre_archivo, list):
+            self.nombre_archivo = self.nombre_archivo[0]
+        if not self.nombre_archivo:
+            raise ValueError("No se especificó archivo de defecto (defect).")
+
+        # --- parámetros con defaults robustos
         rad = self.config.get("radius")
-        if isinstance(rad, list):
-            self.radio_sonda = rad
-        else:
-            self.radio_sonda = [rad]
+        self.radio_sonda = rad if isinstance(rad, list) else [rad if rad is not None else 1.0]
 
-        self.smoothing_leveled = self.config["smoothing_level"]
-        self.cutoff_radius = self.config["cutoff"]
-        self.nombre_archivo = self.config["defect"]
+        self.smoothing_leveled = _get_param(self.config, ["smoothing_level", "smoothingLevel"], default=0, cast=int)
+        self.cutoff_radius = _get_param(self.config, ["cutoff", "cut_off"], default=3.0, cast=float)
 
-       
         self.outputs_dump = "outputs/dump"
         self.outputs_json = "outputs/json"
         os.makedirs(self.outputs_dump, exist_ok=True)
         os.makedirs(self.outputs_json, exist_ok=True)
-
 
     def run(self):
         """
@@ -268,8 +287,7 @@ class ClusterProcessorMachine:
     def __init__(
         self,
         file_path: str,
-        json_params_path: str = "input_params.json",
-        iteraciones=None
+        json_params_path: str = "input_params.json"
     ):
         """
         Carga parámetros desde input_params.json si es necesario (p.ej. min_atoms),
@@ -300,12 +318,19 @@ class ClusterProcessorMachine:
         config = all_params["CONFIG"][0]
 
 
-        self.threshold = config.get("cluster tolerance", config['cluster_tolerance'])
-        
-        self.max_iterations = config.get("iteraciones_clusterig", config['max_iterations'])
 
-        
-        
+        self.threshold = _get_param(
+            config,
+            names=["cluster tolerance", "cluster_tolerance", "clusterTolerance"],
+            default=1.2,
+            cast=float
+        )
+        self.max_iterations = _get_param(
+            config,
+            names=["iteraciones_clusterig", "max_iterations", "iterations"],
+            default=10,
+            cast=int
+        )        
         
         self.matriz_total = UtilidadesClustering.extraer_datos_completos(file_path)
         self.header = UtilidadesClustering.extraer_encabezado(file_path)

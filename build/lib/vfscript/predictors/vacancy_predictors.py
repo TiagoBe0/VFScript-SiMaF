@@ -62,7 +62,7 @@ class VacancyPredictorRF:
         data = {col: [kwargs[col]] for col in self.columns}
         nuevos_datos = pd.DataFrame(data)
         prediction = self.model.predict(nuevos_datos)[0]
-        print(f"Predicción inicial: {prediction}")
+        #print(f"Predicción inicial: {prediction}")
         return self._round_up(prediction)
 
 
@@ -140,7 +140,7 @@ class XGBoostVacancyPredictor:
         sample_input = np.array(sample_input)
         sample_input = self.scaler.transform(sample_input)
         prediction = self.model.predict(sample_input)
-        print(f"Predicción inicial: {prediction}")
+        #print(f"Predicción inicial: {prediction}")
         return prediction
 
 
@@ -179,7 +179,7 @@ class VacancyPredictor:
     def predict_vacancies(self, **kwargs):
         nuevos_datos = pd.DataFrame({col: [kwargs[col]] for col in self.columns})
         prediction = self.model.predict(nuevos_datos)[0]
-        print(f"Predicción inicial: {prediction}")
+        #print(f"Predicción inicial: {prediction}")
         return self._round_positive(prediction)
 
 
@@ -231,7 +231,7 @@ class VacancyPredictorMLP:
         pipeline.fit(X_train, y_train)
         y_pred = pipeline.predict(X_test)
         mse = mean_squared_error(y_test, y_pred)
-        print("MSE del modelo MLP:", mse)
+        #print("MSE del modelo MLP:", mse)
 
         return pipeline
 
@@ -244,5 +244,5 @@ class VacancyPredictorMLP:
     def predict_vacancies(self, **kwargs):
         data = pd.DataFrame({col: [kwargs[col]] for col in self.columns})
         prediction = self.model.predict(data)[0]
-        print(f"Predicción inicial: {prediction}")  
+        #print(f"Predicción inicial: {prediction}")  
         return self._round_up(prediction)

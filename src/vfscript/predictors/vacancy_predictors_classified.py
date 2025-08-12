@@ -269,8 +269,8 @@ class VacancyModelTrainer:
             preds.append(pred)
 
         df['predicted_vacancy'] = preds
-        print("🔮 Predicciones completadas (primeras 5 filas):")
-        print(df[['grupo_predicho', 'predicted_vacancy']].head())
+        #print("🔮 Predicciones completadas (primeras 5 filas):")
+        #print(df[['grupo_predicho', 'predicted_vacancy']].head())
         return df
 
 
