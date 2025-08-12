@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='vacancycalculator',
-    version='0.3.7.7',
+    version='0.3.8.3',
     author='E.Bringa-S.Bergamin-SiMaF',
     author_email='santiagobergamin@gmail.com',
     license='MIT',
@@ -25,7 +25,7 @@ setup(
 
     entry_points={
         "console_scripts": [
-            "vacancy-gui = vfscript.vfs_win:main"
+            "vacancyfinder = vfscript.vfs_win:main"
         ]}
 ,
     include_package_data=True,

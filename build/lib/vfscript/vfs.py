@@ -132,7 +132,7 @@ def VacancyAnalysis():
             #print("✅ Vacancias predichas guardadas en outputs/csv/finger_data_predicha.csv")
 
             # ------------------------------------------------------------------------
-            # 10. Continuar con el resto de tu pipeline
+           
             assigner = FingerprintVacancyAssigner(
                 base_csv_path="outputs/csv/finger_data.csv",
                 query_csv_path="outputs/csv/finger_key_files.csv",
@@ -155,23 +155,21 @@ def VacancyAnalysis():
 
             #ETAPA DE PREDICCIONES
 
-
-            trainer = VacancyModelTrainer(json_path='outputs/json/training_graph.json')
+            trainer = VacancyModelTrainer(json_path="outputs/json/training_graph.json")
             trainer.load_data()
-            trainer.train_all_models()
-            #
-            #  Predecir en lote desde archivo CSV
-            # Supongamos que en la etapa anterior guardaste:
-            # outputs/csv/finger_data_clasificado.csv
-            df_pred = trainer.predict_from_csv('outputs/csv/finger_data_clasificado.csv')
-            df_pred.to_csv('outputs/csv/finger_data_predicha.csv', index=False)
-            print("✅ Vacancias predichas guardadas en outputs/csv/finger_data_predicha.csv")
+            trainer.train_group_classifier()
+            trainer.train_all_regressors()
+        
+            # Predicción por CSV
+            out_df = trainer.predict_from_csv("outputs/csv/finger_data_clasificado.csv")
 
+            out_df.to_csv("outputs/csv/results.csv", index=False)
+            print("✅ Guardado results.csv")
         # Ejemplo de uso
             assigner = FingerprintVacancyAssigner(
                 base_csv_path="outputs/csv/finger_data.csv",
                 query_csv_path="outputs/csv/finger_key_files.csv",
-                weight_N=.5 # peso mayor para 'N'
+                weight_N=100 # peso mayor para 'N'
             )
             df_result = assigner.assign()
             df_result.to_csv("outputs/csv/finger_key_files_clasificado.csv", index=False)

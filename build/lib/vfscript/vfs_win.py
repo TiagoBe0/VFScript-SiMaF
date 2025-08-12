@@ -99,7 +99,7 @@ class SettingsWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.showMaximized()
-        self.setWindowTitle("VacancyFinder-SiMAF   0.3.6.1")
+        self.setWindowTitle("VacancyFinder-SiMAF   0.3.7.9")
 
         self.params = load_params()
         cfg = self.params.setdefault('CONFIG', [{}])[0]
@@ -304,40 +304,75 @@ class SettingsWindow(QMainWindow):
         save_params(self.params)
 
     def browse_file(self, line_edit):
+        filtros = "All Files (*);;Dump Files (*.dump)"
+        start_dir = getattr(self, "_last_dir", str(Path.cwd()))
         abs_path, _ = QFileDialog.getOpenFileName(
-            self, "Select Dump File", "", "Dump Files (*.dump);;All Files (*)"
+            self,
+            "Select File",
+            start_dir,
+            filtros
         )
         if abs_path:
+            # Recordar el último directorio usado
+            self._last_dir = str(Path(abs_path).parent)
+            # Mantener ruta relativa si está dentro del proyecto; si no, absoluta
             try:
                 line_edit.setText(Path(abs_path).relative_to(GUI_ROOT).as_posix())
             except ValueError:
                 line_edit.setText(abs_path)
 
-    def load_dump(self, dump_path):
-        """Carga dump y actualiza vista 3D/2D"""
-        self.progress.setValue(0)
-        pipeline = import_file(dump_path)
-        modifier = ConstructSurfaceModifier(radius=1.0)
-        pipeline.modifiers.append(modifier)
-        data = pipeline.compute()
-        self.progress.setValue(33)
 
-        # Geometría 3D
-        raw_cell = data.cell.matrix
-        a1, a2, a3 = np.array(raw_cell[0][:3]), np.array(raw_cell[1][:3]), np.array(raw_cell[2][:3])
-        corners = [np.zeros(3), a1, a2, a3, a1+a2, a1+a3, a2+a3, a1+a2+a3]
+    def load_dump(self, dump_path):
+        """Carga dump y dibuja la celda exactamente como en el archivo."""
+        self.progress.setValue(0)
+
+        # Cargar con OVITO (no cambia la celda)
+        pipeline = import_file(dump_path)
+        data = pipeline.compute()
+        self.progress.setValue(20)
+
+        # === Celda correcta desde OVITO ===
+        # M tiene shape (3,4): las 3 PRIMERAS columnas son a1,a2,a3 (como columnas), la 4ta es el origen.
+        M = np.asarray(data.cell.matrix, dtype=float)  # (3x4)
+        a1 = M[:, 0]
+        a2 = M[:, 1]
+        a3 = M[:, 2]
+        origin = M[:, 3]
+
+        # Esquinas de la celda (paralelepípedo) respetando origen y posible inclinación (triclinic)
+        corners = [
+            origin,                   # 0
+            origin + a1,              # 1
+            origin + a2,              # 2
+            origin + a3,              # 3
+            origin + a1 + a2,         # 4
+            origin + a1 + a3,         # 5
+            origin + a2 + a3,         # 6
+            origin + a1 + a2 + a3     # 7
+        ]
         edges = [(0,1),(0,2),(0,3),(1,4),(1,5),(2,4),(2,6),(3,5),(3,6),(4,7),(5,7),(6,7)]
+
+        # === Partículas ===
+        pos_prop = data.particles.positions
+        positions = pos_prop.array if hasattr(pos_prop, "array") else np.asarray(pos_prop, dtype=float)
+
+        # === Vista 3D (PyVista) ===
         self.plotter.clear()
         for i, j in edges:
-            self.plotter.add_mesh(pv.Line(corners[i], corners[j]), color='blue', line_width=2)
-        pos_prop = data.particles.positions
-        positions = pos_prop.array if hasattr(pos_prop, 'array') else pos_prop[:]
-        self.plotter.add_mesh(pv.PolyData(positions),
-                              color='black', render_points_as_spheres=True, point_size=8)
-        self.plotter.reset_camera()
-        self.progress.setValue(66)
+            self.plotter.add_mesh(pv.Line(corners[i], corners[j]), color="blue", line_width=2)
 
-        # Vista 2D
+        self.plotter.add_mesh(
+            pv.PolyData(positions),
+            color="black",
+            render_points_as_spheres=True,
+            point_size=8
+        )
+        self.plotter.reset_camera()
+        # Mejor relación de aspecto (evita distorsiones por auto-escala desigual)
+        self.plotter.set_scale(1, 1, 1)
+        self.progress.setValue(70)
+
+        # === Vista 2D (proyección XY para referencia) ===
         self.fig.clf()
         ax = self.fig.add_subplot(111)
         for i, j in edges:
@@ -346,9 +381,11 @@ class SettingsWindow(QMainWindow):
             ax.plot([x0, x1], [y0, y1], '-', linewidth=1)
         ax.scatter(positions[:, 0], positions[:, 1], s=10)
         ax.set_xlabel('X'); ax.set_ylabel('Y')
-        ax.set_aspect('equal', 'box')
+        ax.set_aspect('equal', 'box')  # respetar proporciones
+        ax.grid(True, linewidth=0.3)
         self.canvas.draw()
         self.progress.setValue(100)
+
 
     def run_vacancy_analysis(self):
         self.log_output.clear()

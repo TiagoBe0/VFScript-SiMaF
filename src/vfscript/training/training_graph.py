@@ -18,7 +18,6 @@ from vfscript.training.utils import resolve_input_params_path
 
 class AtomicGraphGenerator:
     def __init__(self, json_params_path: str = None):
-        # --- Parámetros de input_params.json -------------
         if json_params_path is None:
             json_params_path = resolve_input_params_path("input_params.json")
         cfg = json.load(open(json_params_path))["CONFIG"][0]
@@ -28,24 +27,23 @@ class AtomicGraphGenerator:
         self.smoothing = cfg['smoothing_level_training']
         self.iterations= cfg['max_graph_variations']
         self.max_nodes = cfg['max_graph_size']
-        # -------------------------------------------------
+       
 
         self.pipeline = import_file(self.input_path, multiple_frames=True)
 
-        # Prepara JSON
+       
         self.records = []
 
-        # Rutas y header
+        
         self.csv_path = "outputs/csv/finger_data.csv"
         os.makedirs(os.path.dirname(self.csv_path), exist_ok=True)
 
         header = [
-            "vacancys",  # tú pusiste 'length', pon aquí el nombre real
+            "vacancys",  
             "N", "mean", "std",
             "skewness", "kurtosis", "Q1", "median", "Q3", "IQR"
         ] + [f"hist_bin_{i}" for i in range(1,11)]
 
-        # Sólo escribir header si el archivo NO existe o está vacío
         if not os.path.exists(self.csv_path) or os.path.getsize(self.csv_path) == 0:
             with open(self.csv_path, 'w', newline='', encoding='utf-8') as csvfile:
                 writer = csv.writer(csvfile)
@@ -61,13 +59,13 @@ class AtomicGraphGenerator:
                     graph_size,
                     variation_idx
                 )
-                # 2) extraer normas y estadísticas
+                
                 proc = DumpProcessor(dump_path)
                 proc.read_and_translate()
                 proc.compute_norms()
                 stats = StatisticsCalculator.compute_statistics(proc.norms)
 
-                # 3) agregar al JSON interno
+              
                 rec = {
                     "surface_area": area,
                     "filled_volume": volume,
@@ -77,7 +75,7 @@ class AtomicGraphGenerator:
                 }
                 self.records.append(rec)
 
-                # 4) escribir línea en el CSV
+                
                 row = [
                     len(ids),
                     stats['N'],
@@ -94,7 +92,7 @@ class AtomicGraphGenerator:
                     writer = csv.writer(csvfile)
                     writer.writerow(row)
 
-        # Guardar JSON completo
+    
         os.makedirs("outputs/json", exist_ok=True)
         with open("outputs/json/training_graph.json", "w", encoding='utf-8') as f:
             json.dump(self.records, f, indent=4)

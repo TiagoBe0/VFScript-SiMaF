@@ -1,2 +1,2 @@
 [console_scripts]
-vacancy-gui = vfscript.vfs_win:main
+vacancyfinder = vfscript.vfs_win:main
