@@ -6,6 +6,7 @@ from pathlib import Path
 import os
 import pandas as pd
 import warnings
+import argparse
 warnings.filterwarnings('ignore', message='.*OVITO.*PyPI')
 
 def VacancyAnalysis():
@@ -32,8 +33,43 @@ def VacancyAnalysis():
         dump_path = cs_generator.generate()
         #print(f"Estructura relajada generada en: {dump_path}")
         if configuracion['training']:
+        # 1) Recuperar el dict que guarda tu pestaña (CONFIG[0]['training_setup'])
+     
+            params = json.load(open("input_params.json", "r", encoding="utf-8"))
+            setup_dict = params["CONFIG"][0]["training_setup"]
+
+            # 2) Construir el preparador
+            prep = TrainingPreparer.from_setup_dict(setup_dict, out_dir=Path("outputs/training"),
+                                                    logger=lambda m: print("[training]", m))
+
+            # 3) Validar + preparar entorno
+            prep.validate()
+            prep.prepare_workspace()
+
+            # 4) (Opcional) generar una red perfecta .dump para pruebas
+            dump_ref = prep.generate_perfect_dump()  # outputs/training/relax_structure.dump
+
+            # 5) Extraer features de uno o varios dumps y generar CSV
+            csv_path = prep.build_dataset_csv([dump_ref])   # o bien una lista de dumps reales tuyos
+            print("Dataset listo en:", csv_path)
             gen = AtomicGraphGenerator()
             gen.run()
+            p = argparse.ArgumentParser(description="Exporta features (normas + ConvexHull) a CSV.")
+            p.add_argument("--output-csv", default="outputs/csv/finger_data.csv",
+                        help="Ruta del CSV de salida.")
+            p.add_argument("--dump", action="append",
+                        help="Ruta a uno o más .dump (repetible). Si se omite, se toma de input_params.json.")
+            args = p.parse_args()
+
+            exporter = FeatureExporter(
+                dump_paths=args.dump if args.dump else None,
+                output_csv=args.output_csv
+            )
+            try:
+                exporter.export()
+            except ImportError as e:
+                # Si falta SciPy, el compute_convex_hull lo avisa acá
+                print(f"[ERROR] {e}\nSugerencia: pip install scipy")
 
 
         analyzer = DeformationAnalyzer(FILE, configuracion['generate_relax'][0], configuracion['generate_relax'][5], threshold=0.02)
@@ -41,6 +77,12 @@ def VacancyAnalysis():
         method = analyzer.select_method()
         #print(f"Métrica δ = {delta:.4f}, método seleccionado: {method}")
         
+
+
+
+
+
+
         # 2) Condicional
         if method == 'geometric' and configuracion['geometric_method']:
             # Aplico el método geométrico
@@ -97,7 +139,6 @@ def VacancyAnalysis():
             surf_proc = SurfaceProcessor(configuracion)
             surf_proc.process_all_files()
             surf_proc.export_results()
-
 
 
             exporter = ClusterFeatureExporter("outputs/json/key_archivos.json")

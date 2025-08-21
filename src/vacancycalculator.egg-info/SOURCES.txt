@@ -35,6 +35,7 @@ src/vfscript/surface_processor/cluster_dump_processor.py
 src/vfscript/surface_processor/surface_processor.py
 src/vfscript/training/__init__.py
 src/vfscript/training/cristal_structure_gen.py
+src/vfscript/training/preparer.py
 src/vfscript/training/training_btr_assing.py
 src/vfscript/training/training_btree.py
 src/vfscript/training/training_defect_fingerstyle.py
